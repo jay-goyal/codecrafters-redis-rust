@@ -1,5 +1,4 @@
-#![allow(unused_imports)]
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::TcpListener;
 
 fn main() {
@@ -14,7 +13,24 @@ fn main() {
         match stream {
             Ok(mut stream) => {
                 println!("accepted new connection");
-                stream.write_all(b"+PONG\r\n").unwrap();
+                loop {
+                    let mut buf = [0 as u8; 1024];
+                    stream.read(&mut buf).unwrap();
+                    let str;
+                    match String::from_utf8(buf.to_vec()) {
+                        Ok(string) => str = string,
+                        Err(e) => {
+                            println!("Error occured {e}");
+                            continue;
+                        }
+                    }
+
+                    println!("{str}");
+
+                    for _ in str.match_indices("PING") {
+                        stream.write_all(b"+PONG\r\n").unwrap();
+                    }
+                }
             }
             Err(e) => {
                 println!("error: {}", e);
